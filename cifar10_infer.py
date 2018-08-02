@@ -21,7 +21,7 @@ if __name__ == "__main__":
     label_queue = data["label"]
 
     with tf.device('/cpu:0'):
-        logits = cifar10_model.dnn(image_queue, training = False)
+        logits = cifar10_model.dnn(image_queue, training = True)
         prediction, probability = cifar10_model.predict(logits)
         _, accuracy = cifar10_model.evaluate(logits, label_queue)
 
