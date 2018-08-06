@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     image = tf.placeholder(tf.float32, shape = (None, 32, 32, 3))
     label = tf.placeholder(tf.int32)
+    training_mode = tf.placeholder(tf.bool, shape = ())
 
     dataset_iterator = cifar10_input.input_dataset(image, label, 256, 1)
     data = dataset_iterator.get_next()
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     label_queue = data["label"]
 
     with tf.device('/cpu:0'):
-        logits = cifar10_model.dnn(image_queue, training = True)
+        logits = cifar10_model.dnn(image_queue, training = training_mode)
         prediction, probability = cifar10_model.predict(logits)
         _, accuracy = cifar10_model.evaluate(logits, label_queue)
 
@@ -30,13 +31,15 @@ if __name__ == "__main__":
     saver_handle = tf.train.Saver()
 
     with tf.Session() as sess:
-        sess.run(tf.local_variables_initializer())
         saver_handle.restore(sess, "./trained_model/model.ckpt")
+        sess.run(tf.local_variables_initializer())
+
         cifar10_dataset = cifar10_input.unpickle(path + '/test_batch')
         image_in = np.reshape(cifar10_dataset[b'data'], (-1, 32, 32, 3))
         label_in = cifar10_dataset[b'labels']
         sess.run(dataset_iterator.initializer, feed_dict = {image: image_in, label: label_in})
 
-        prediction_out, probability_out, actual = sess.run([prediction, probability, label_queue])
+        prediction_out, probability_out, actual, accuracy_value = sess.run([prediction, probability,
+                                            label_queue, accuracy], feed_dict = {training_mode: True})
         #print("Prediction: %d with Probability: %f\nActual: %d" % (prediction_out, probability_out, actual))
-        print("Accuracy: %f" % (accuracy.eval()))
+        print("Accuracy: %f" % (accuracy_value))

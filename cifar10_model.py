@@ -83,6 +83,7 @@ if __name__ == "__main__":
 
     image = tf.placeholder(tf.float32, shape = [None, 32, 32, 3])
     label = tf.placeholder(tf.int32)
+    training_mode = tf.placeholder(tf.bool, shape = ())
 
     dataset_iterator = cifar10_input.input_dataset(image, label, BATCH_SIZE, NO_OF_EPOCHS)
     data = dataset_iterator.get_next()
@@ -90,10 +91,8 @@ if __name__ == "__main__":
     image_queue = data["features"]
     label_queue = data["label"]
 
-    logits_training = dnn(image_queue, training = True)
-    tf.get_variable_scope().reuse_variables()
-    logits = dnn(image_queue, training = False)
-    loss, train_step = train(logits_training, label_queue, LEARNING_RATE)
+    logits = dnn(image_queue, training = training_mode)
+    loss, train_step = train(logits, label_queue, LEARNING_RATE)
     accuracy = old_evaluate(logits, label_queue)
 
     path = './dataset/cifar-10-batches-py'
@@ -111,7 +110,8 @@ if __name__ == "__main__":
         count = 1
         while True:
             try:
-                loss_value, _, accuracy_value = sess.run([loss, train_step, accuracy])
+                loss_value, _, accuracy_value = sess.run([loss, train_step, accuracy],
+                                                         feed_dict = {training_mode: True})
                 if count % 100 == 0:
                     print("Step: %6d,\tLoss: %8.4f,\tAccuracy: %0.4f" % (count, loss_value, accuracy_value))
                 count += 1
@@ -122,7 +122,6 @@ if __name__ == "__main__":
         image_in = np.reshape(cifar10_dataset[b'data'], (-1, 32, 32, 3))
         label_in = cifar10_dataset[b'labels']
 
-        sess.run(tf.local_variables_initializer())
         sess.run(dataset_iterator.initializer, feed_dict = {image: image_in, label: label_in})
-        accuracy_value = sess.run(accuracy)
+        accuracy_value = sess.run(accuracy, feed_dict = {training_mode: True})
         print("Accuracy: ", accuracy_value)
