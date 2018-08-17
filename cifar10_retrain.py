@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     BATCH_SIZE = 128
     NO_OF_EPOCHS = 30
-    LEARNING_RATE = 1
+    LEARNING_RATE = 0.1
 
     image = tf.placeholder(tf.float32, shape = (None, 32, 32, 3))
     label = tf.placeholder(tf.int32)
@@ -62,5 +62,4 @@ if __name__ == "__main__":
         sess.run(dataset_iterator.initializer, feed_dict = {image: image_in, label: label_in})
 
         accuracy_value = sess.run(accuracy)
-
         print("Accuracy: ", accuracy_value)

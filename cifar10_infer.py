@@ -16,7 +16,7 @@ if __name__ == "__main__":
     label = tf.placeholder(tf.int32)
     training_mode = tf.placeholder(tf.bool, shape = ())
 
-    dataset_iterator = cifar10_input.input_dataset(image, label, 256, 1)
+    dataset_iterator = cifar10_input.input_dataset(image, label, 10000, 1)
     data = dataset_iterator.get_next()
     image_queue = data["features"]
     label_queue = data["label"]
@@ -40,6 +40,6 @@ if __name__ == "__main__":
         sess.run(dataset_iterator.initializer, feed_dict = {image: image_in, label: label_in})
 
         prediction_out, probability_out, actual, accuracy_value = sess.run([prediction, probability,
-                                            label_queue, accuracy], feed_dict = {training_mode: True})
+                                            label_queue, accuracy], feed_dict = {training_mode: False})
         #print("Prediction: %d with Probability: %f\nActual: %d" % (prediction_out, probability_out, actual))
         print("Accuracy: %f" % (accuracy_value))

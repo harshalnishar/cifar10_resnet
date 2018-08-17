@@ -15,7 +15,6 @@ def dnn(image, training):
     :param image: input image tensor
     :return: model output tensor node
     """
-
     resnet_object = resnet_model.Model(resnet_size = 32,
                                        bottleneck = False,
                                        num_classes = 10,
@@ -32,7 +31,6 @@ def dnn(image, training):
     update_op = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_op):
         logits = resnet_object(image, training = training)
-
     return logits
 
 def predict(logits):
