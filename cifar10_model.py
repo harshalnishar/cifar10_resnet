@@ -60,7 +60,7 @@ def evaluate(logits, labels):
     accuracy, accuracy_op = tf.metrics.accuracy(labels = labels, predictions = prediction)
     return accuracy, accuracy_op
 
-def train(logits, labels, learning_rate):
+def train(logits, labels, learning_rate, l2_regularization, step):
     """
     function to train the dnn model for cifar10 training set
     :param logits: logits tensor
@@ -68,9 +68,11 @@ def train(logits, labels, learning_rate):
     :param learning_rate: initial learning rate
     :return: trainig operation
     """
-    loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = logits, labels = labels))
+    loss_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits = logits, labels = labels))
+    loss_l2 = tf.reduce_mean([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' or 'batch_norm' not in v.name])
+    loss = loss_entropy + l2_regularization * loss_l2
     optimizer = tf.train.GradientDescentOptimizer(learning_rate = learning_rate)
-    optimizer_step = optimizer.minimize(loss)
+    optimizer_step = optimizer.minimize(loss, step)
     return loss, optimizer_step
 
 
@@ -78,8 +80,9 @@ if __name__ == "__main__":
     import cifar10_input
 
     BATCH_SIZE = 128
-    NO_OF_EPOCHS = 5
+    NO_OF_EPOCHS = 100
     LEARNING_RATE = 1
+    LAMBDA = 0.001
 
     image = tf.placeholder(tf.float32, shape = [None, 32, 32, 3])
     label = tf.placeholder(tf.int32)
@@ -89,10 +92,11 @@ if __name__ == "__main__":
     image_queue = data["features"]
     label_queue = data["label"]
 
+    step = tf.train.get_or_create_global_step()
     logits_train = dnn(image_queue, training = True)
     tf.get_variable_scope().reuse_variables()
     logits_test = dnn(image_queue, training = False)
-    loss, train_step = train(logits_train, label_queue, LEARNING_RATE)
+    loss, train_step = train(logits_train, label_queue, LEARNING_RATE, LAMBDA, step)
     accuracy = old_evaluate(logits_test, label_queue)
 
     path = './dataset/cifar-10-batches-py'
@@ -119,7 +123,7 @@ if __name__ == "__main__":
         variables = [v.name for v in tf.trainable_variables()]
         print(variables)
 
-        cifar10_dataset = cifar10_input.unpickle(filename_list[1])
+        cifar10_dataset = cifar10_input.unpickle(path + '/test_batch')
         image_in = np.reshape(cifar10_dataset[b'data'], (-1, 32, 32, 3))
         label_in = cifar10_dataset[b'labels']
         sess.run(dataset_iterator.initializer, feed_dict = {image: image_in, label: label_in})
